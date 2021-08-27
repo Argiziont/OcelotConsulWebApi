@@ -1,0 +1,61 @@
+version: '3.4'
+
+services:
+
+  ocelotapibase:
+    image: ${DOCKER_REGISTRY-}gatewaywebapi
+    ports:
+        - "9305:80"
+    build:
+      context: .
+      dockerfile: Gateway.WebApi/Dockerfile
+    networks: 
+      - custom-network  
+    container_name: gateawayapi
+
+  dateservice:
+    image: ${DOCKER_REGISTRY-}dateservice
+    networks: 
+      - custom-network
+    build:
+      context: .
+      dockerfile: DateService/Dockerfile
+    container_name: dateservice
+
+  customerservice:
+    image: ${DOCKER_REGISTRY-}customermicroservice
+    networks: 
+      - custom-network
+    build:
+      context: .
+      dockerfile: Customer.Microservice/Dockerfile
+    container_name: customermicroservice
+
+
+  productservice:
+    image: ${DOCKER_REGISTRY-}productmicroservice
+    networks: 
+      - custom-network
+    build:
+      context: .
+      dockerfile: Product.Microservice/Dockerfile
+    container_name: productmicroservice
+
+  consul-server: 
+    image: consul:latest
+    networks: 
+      - custom-network
+    ports: 
+      - "8500:8500"
+      - "8600:8600/udp"
+    environment:
+      CONSUL_LOCAL_CONFIG: "{\"services\":[{\"Name\":\"dateservice\",\"Address\":\"dateservice\",\"Port\":80},{\"Name\":\"customerservice\",\"Address\":\"customerservice\",\"Port\":80},{\"Name\":\"productservice\",\"Address\":\"productservice\",\"Port\":80}]}"
+    command: "agent -server -data-dir /tmp/consul -config-dir /consul/config -bootstrap-expect 1 -ui -client 0.0.0.0"
+    container_name: consul
+
+networks:
+  custom-network:
+    driver: bridge
+
+
+
